@@ -1,9 +1,9 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { useEffect, useMemo, useState } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "./firebase";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
-const SALES_URL = "/yardsaletracker/sales.json";
 
 function makeIcon(color, border = "white") {
   return L.divIcon({
@@ -56,10 +56,17 @@ export default function YardSaleTracker() {
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
-    fetch(SALES_URL)
-      .then((res) => res.json())
-      .then(setSales)
-      .catch((err) => console.error("Could not load sales.json", err));
+    const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
+      const firebaseSales = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log("🔥 Firestore sales:", firebaseSales);
+      setSales(firebaseSales);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -90,6 +97,7 @@ export default function YardSaleTracker() {
   const stats = useMemo(() => {
     const visited = sales.filter((sale) => statuses[sale.id] === "visited").length;
     const skipped = sales.filter((sale) => statuses[sale.id] === "skipped").length;
+
     return {
       total: sales.length,
       visited,
@@ -122,10 +130,10 @@ export default function YardSaleTracker() {
         zoom={14}
         style={{ height: "100%", width: "100%" }}
       >
-       <TileLayer
-  attribution="Tiles &copy; Esri"
-  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-/>
+        <TileLayer
+          attribution="Tiles &copy; Esri"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        />
 
         {sales.map((sale) => {
           const status = statuses[sale.id] || "unvisited";
@@ -137,7 +145,7 @@ export default function YardSaleTracker() {
               icon={icons[status]}
             >
               <Popup>
-                <strong>{sale.name}</strong>
+                <strong>{sale.title || sale.name || "Yard Sale"}</strong>
                 <br />
                 {sale.address}
                 <br />
@@ -179,7 +187,8 @@ export default function YardSaleTracker() {
       <div style={statusBoxStyle}>
         <strong>Yard Sale Tracker</strong>
         <br />
-        {stats.visited}/{stats.total} visited · {stats.left} left · {stats.skipped} skipped
+        {stats.visited}/{stats.total} visited · {stats.left} left ·{" "}
+        {stats.skipped} skipped
       </div>
     </div>
   );
