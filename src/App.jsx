@@ -787,7 +787,7 @@ const meDotInnerStyle = {
 
 const orientationButtonStyle = {
   position: "absolute",
-  bottom: 28,
+  bottom: 50,
   left: 16,
   zIndex: 1000,
   width: 46,
