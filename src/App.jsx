@@ -1,5 +1,4 @@
 import {
-  CircleMarker,
   MapContainer,
   Marker,
   Popup,
@@ -37,6 +36,51 @@ function makeIcon(color, border = "white") {
   });
 }
 
+function makeUserIcon(heading = 0, facingMode = false) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        position: relative;
+        width: 34px;
+        height: 34px;
+      ">
+        ${
+          facingMode
+            ? `<div style="
+                position: absolute;
+                left: 10px;
+                top: -4px;
+                width: 0;
+                height: 0;
+                border-left: 7px solid transparent;
+                border-right: 7px solid transparent;
+                border-bottom: 16px solid #2563eb;
+                transform: rotate(${heading}deg);
+                transform-origin: 7px 21px;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+              "></div>`
+            : ""
+        }
+
+        <div style="
+          position: absolute;
+          left: 6px;
+          top: 6px;
+          width: 18px;
+          height: 18px;
+          background: #2563eb;
+          border: 4px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+        "></div>
+      </div>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  });
+}
+
 const icons = {
   unvisited: makeIcon("white", "black"),
   want: makeIcon("#f97316", "white"),
@@ -58,6 +102,21 @@ function RecenterButton({ userLocation }) {
       style={buttonStyle}
     >
       Me
+    </button>
+  );
+}
+
+function OrientationButton({ orientationMode, setOrientationMode }) {
+  return (
+    <button
+      onClick={() => {
+        setOrientationMode((current) =>
+          current === "north" ? "facing" : "north"
+        );
+      }}
+      style={orientationButtonStyle}
+    >
+      {orientationMode === "north" ? "North Up" : "Facing"}
     </button>
   );
 }
@@ -92,8 +151,7 @@ function DraftSaleMarker({ draftSale, setDraftSale }) {
       draggable={true}
       eventHandlers={{
         dragend: (event) => {
-          const marker = event.target;
-          const position = marker.getLatLng();
+          const position = event.target.getLatLng();
 
           setDraftSale({
             lat: position.lat,
@@ -188,10 +246,10 @@ function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
       <div style={sheetHeaderStyle}>
         <div>
           <div style={sheetTitleStyle}>
-            {sale.title || sale.name || "Yard Sale"}
+            {sale.address || "Yard Sale"}
           </div>
           <div style={sheetStatusStyle}>
-            Current: {status}
+            Status: {status}
           </div>
         </div>
 
@@ -199,8 +257,6 @@ function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
           ×
         </button>
       </div>
-
-      <div style={sheetAddressStyle}>{sale.address}</div>
 
       <div style={sheetButtonGridStyle}>
         <button onClick={() => onStatus(sale.id, "want")} style={wantButtonStyle}>
@@ -234,8 +290,8 @@ export default function YardSaleTracker() {
   const [statuses, setStatuses] = useState({});
   const [userLocation, setUserLocation] = useState(null);
   const [draftSale, setDraftSale] = useState(null);
-
   const [selectedSale, setSelectedSale] = useState(null);
+  const [orientationMode, setOrientationMode] = useState("north");
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
@@ -274,6 +330,7 @@ export default function YardSaleTracker() {
           lng: pos.coords.longitude,
           speed: pos.coords.speed,
           accuracy: pos.coords.accuracy,
+          heading: pos.coords.heading,
         });
       },
       (err) => console.warn("Location error:", err),
@@ -317,6 +374,11 @@ export default function YardSaleTracker() {
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
   }
 
+  const userHeading =
+    userLocation?.heading !== null && userLocation?.heading !== undefined
+      ? userLocation.heading
+      : 0;
+
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
       <MapContainer
@@ -339,34 +401,30 @@ export default function YardSaleTracker() {
 
           return (
             <Marker
-  key={sale.id}
-  position={[sale.lat, sale.lng]}
-  icon={icons[status]}
-  eventHandlers={{
-    click: () => setSelectedSale(sale),
-  }}
-/>
+              key={sale.id}
+              position={[sale.lat, sale.lng]}
+              icon={icons[status]}
+              eventHandlers={{
+                click: () => setSelectedSale(sale),
+              }}
+            />
           );
         })}
 
         <DraftSaleMarker draftSale={draftSale} setDraftSale={setDraftSale} />
 
         {userLocation && (
-          <CircleMarker
-            center={[userLocation.lat, userLocation.lng]}
-            radius={9}
-            pathOptions={{
-              color: "white",
-              weight: 3,
-              fillColor: "#2563eb",
-              fillOpacity: 1,
-            }}
-          >
-            <Popup>You are here</Popup>
-          </CircleMarker>
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={makeUserIcon(userHeading, orientationMode === "facing")}
+          />
         )}
 
         <RecenterButton userLocation={userLocation} />
+        <OrientationButton
+          orientationMode={orientationMode}
+          setOrientationMode={setOrientationMode}
+        />
         <AddSaleControls draftSale={draftSale} setDraftSale={setDraftSale} />
       </MapContainer>
 
@@ -379,13 +437,14 @@ export default function YardSaleTracker() {
       </div>
 
       <Speedometer userLocation={userLocation} />
+
       <BottomSheet
-  sale={selectedSale}
-  status={selectedSale ? statuses[selectedSale.id] || "unvisited" : "unvisited"}
-  onClose={() => setSelectedSale(null)}
-  onStatus={setStatus}
-  directionsUrl={directionsUrl}
-/>
+        sale={selectedSale}
+        status={selectedSale ? statuses[selectedSale.id] || "unvisited" : "unvisited"}
+        onClose={() => setSelectedSale(null)}
+        onStatus={setStatus}
+        directionsUrl={directionsUrl}
+      />
     </div>
   );
 }
@@ -416,7 +475,7 @@ const buttonStyle = {
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
 };
 
-const addButtonStyle = {
+const orientationButtonStyle = {
   position: "absolute",
   top: 174,
   left: 12,
@@ -429,9 +488,22 @@ const addButtonStyle = {
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
 };
 
+const addButtonStyle = {
+  position: "absolute",
+  top: 224,
+  left: 12,
+  zIndex: 1000,
+  background: "white",
+  color: "black",
+  padding: "10px 14px",
+  borderRadius: 10,
+  border: "1px solid #aaa",
+  boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+};
+
 const draftBoxStyle = {
   position: "absolute",
-  top: 174,
+  top: 224,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -505,10 +577,12 @@ const sheetOverlayStyle = {
   bottom: 0,
   zIndex: 2000,
   background: "white",
+  color: "black",
   borderTopLeftRadius: 20,
   borderTopRightRadius: 20,
   padding: 16,
   boxShadow: "0 -6px 20px rgba(0,0,0,0.3)",
+  fontFamily: "system-ui, sans-serif",
 };
 
 const sheetHandleStyle = {
@@ -522,39 +596,70 @@ const sheetHandleStyle = {
 const sheetHeaderStyle = {
   display: "flex",
   justifyContent: "space-between",
+  gap: 12,
 };
 
 const sheetTitleStyle = {
   fontSize: 18,
   fontWeight: "bold",
+  lineHeight: 1.25,
 };
 
 const sheetStatusStyle = {
-  fontSize: 12,
+  fontSize: 13,
   color: "#666",
-};
-
-const sheetAddressStyle = {
-  marginTop: 10,
+  marginTop: 4,
 };
 
 const closeButtonStyle = {
   border: "none",
   background: "none",
-  fontSize: 22,
+  color: "black",
+  fontSize: 26,
 };
 
 const sheetButtonGridStyle = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
   gap: 8,
-  marginTop: 12,
+  marginTop: 14,
 };
 
-const wantButtonStyle = { background: "#f97316", color: "white", padding: 10 };
-const visitedButtonStyle = { background: "#16a34a", color: "white", padding: 10 };
-const skippedButtonStyle = { background: "#6b7280", color: "white", padding: 10 };
-const resetButtonStyle = { background: "white", border: "1px solid #ccc", padding: 10 };
+const wantButtonStyle = {
+  background: "#f97316",
+  color: "white",
+  padding: 12,
+  border: "none",
+  borderRadius: 10,
+  fontWeight: "bold",
+};
+
+const visitedButtonStyle = {
+  background: "#16a34a",
+  color: "white",
+  padding: 12,
+  border: "none",
+  borderRadius: 10,
+  fontWeight: "bold",
+};
+
+const skippedButtonStyle = {
+  background: "#6b7280",
+  color: "white",
+  padding: 12,
+  border: "none",
+  borderRadius: 10,
+  fontWeight: "bold",
+};
+
+const resetButtonStyle = {
+  background: "white",
+  color: "black",
+  border: "1px solid #ccc",
+  padding: 12,
+  borderRadius: 10,
+  fontWeight: "bold",
+};
 
 const directionsButtonStyle = {
   display: "block",
@@ -562,7 +667,8 @@ const directionsButtonStyle = {
   background: "#2563eb",
   color: "white",
   textAlign: "center",
-  padding: 12,
-  borderRadius: 10,
+  padding: 14,
+  borderRadius: 12,
   textDecoration: "none",
+  fontWeight: "bold",
 };
