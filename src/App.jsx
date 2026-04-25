@@ -98,6 +98,8 @@ function cleanAddress(address) {
     .replace(/,?\s*TX\s*76227/gi, "")
     .replace(/,?\s*76227/gi, "")
     .replace(/,?\s*Aubrey/gi, "")
+    .replace(/,\s*TX$/gi, "")
+    .replace(/\s+TX$/gi, "")
     .replace(/\s*,\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -381,9 +383,11 @@ function BottomSheet({
   directionsUrl,
   onStartRoute,
   onClearRoute,
+  onUpdateAddress,
   routeActive,
   routeInfo,
 }) {
+  
   if (!sale) return null;
 
   return (
@@ -392,7 +396,13 @@ function BottomSheet({
 
       <div style={sheetHeaderStyle}>
         <div>
-          <div style={sheetTitleStyle}>{cleanAddress(sale.address)}</div>
+          <button
+  onClick={() => onUpdateAddress(sale)}
+  style={editableAddressStyle}
+  title="Edit address"
+>
+  {cleanAddress(sale.address)}
+</button>
           <div style={sheetStatusStyle}>Status: {formatStatus(status)}</div>
           {routeInfo && (
             <div style={sheetStatusStyle}>
@@ -583,6 +593,29 @@ export default function YardSaleTracker() {
     });
   }
 
+  async function updateSaleAddress(sale) {
+  const newAddress = window.prompt("Edit address", sale.address || "");
+
+  if (newAddress === null) return;
+
+  await setDoc(
+    doc(db, "sales", sale.id),
+    {
+      address: newAddress,
+      title: newAddress || sale.title || "Yard Sale",
+      name: newAddress || sale.name || "Yard Sale",
+    },
+    { merge: true }
+  );
+
+  setSelectedSale({
+    ...sale,
+    address: newAddress,
+    title: newAddress || sale.title,
+    name: newAddress || sale.name,
+  });
+}
+
   function directionsUrl(sale) {
     const destination = `${sale.lat},${sale.lng}`;
 
@@ -728,6 +761,7 @@ export default function YardSaleTracker() {
         directionsUrl={directionsUrl}
         onStartRoute={startRoute}
         onClearRoute={clearRoute}
+        onUpdateAddress={updateSaleAddress}
         routeActive={routeDestinationId === selectedSale?.id}
         routeInfo={routeDestinationId === selectedSale?.id ? routeInfo : null}
       />
@@ -922,6 +956,18 @@ const sheetTitleStyle = {
   fontSize: 21,
   fontWeight: "bold",
   lineHeight: 1.25,
+};
+
+  const editableAddressStyle = {
+  ...sheetTitleStyle,
+  background: "none",
+  border: "none",
+  padding: 0,
+  margin: 0,
+  color: "black",
+  textAlign: "left",
+  textDecoration: "underline",
+  cursor: "pointer",
 };
 
 const sheetStatusStyle = {
