@@ -151,6 +151,35 @@ function OrientationButton({ orientationMode, setOrientationMode }) {
   );
 }
 
+function SearchSalesButton({ sales, setSelectedSale }) {
+  const map = useMap();
+
+  function searchSales() {
+    const searchText = window.prompt("Search existing sale addresses", "");
+
+    if (!searchText) return;
+
+    const match = sales.find((sale) => {
+      const address = `${sale.address || ""} ${sale.title || ""} ${sale.name || ""}`;
+      return address.toLowerCase().includes(searchText.toLowerCase());
+    });
+
+    if (!match) {
+      window.alert("No matching sale found.");
+      return;
+    }
+
+    setSelectedSale(match);
+    map.setView([match.lat, match.lng], 18);
+  }
+
+  return (
+    <button onClick={searchSales} style={searchButtonStyle} title="Search sales">
+  <span style={{ fontSize: 20 }}>🔍</span>
+</button>
+  );
+}
+
 function Speedometer({ userLocation }) {
   const speedMph =
     userLocation?.speed !== null && userLocation?.speed !== undefined
@@ -728,6 +757,7 @@ export default function YardSaleTracker() {
           orientationMode={orientationMode}
           setOrientationMode={setOrientationMode}
         />
+        <SearchSalesButton sales={sales} setSelectedSale={setSelectedSale} />
         <AddSaleControls draftSale={draftSale} setDraftSale={setDraftSale} />
 
         <MapRotationController
@@ -839,6 +869,14 @@ const orientationButtonStyle = {
   alignItems: "center",
   justifyContent: "center",
   transform: "rotate(-45deg)",
+};
+
+const searchButtonStyle = {
+  ...orientationButtonStyle,
+  left: 72,
+  transform: "none",
+  background: "white",
+  color: "#2563eb",
 };
 
 const addButtonStyle = {
