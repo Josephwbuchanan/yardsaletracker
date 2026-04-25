@@ -32,6 +32,7 @@ function makeIcon(color, border = "white") {
 
 const icons = {
   unvisited: makeIcon("white", "black"),
+  want: makeIcon("#f97316", "white"),
   visited: makeIcon("#16a34a", "white"),
   skipped: makeIcon("#9ca3af", "white"),
   user: makeIcon("#2563eb", "white"),
@@ -238,15 +239,18 @@ export default function YardSaleTracker() {
                 <br />
                 <br />
 
-                <button onClick={() => setStatus(sale.id, "visited")}>
-                  Visited
-                </button>{" "}
-                <button onClick={() => setStatus(sale.id, "skipped")}>
-                  Skipped
-                </button>{" "}
-                <button onClick={() => setStatus(sale.id, "unvisited")}>
-                  Reset
-                </button>
+              <button onClick={() => setStatus(sale.id, "want")}>
+                Want
+              </button>{" "}
+              <button onClick={() => setStatus(sale.id, "visited")}>
+                Visited
+              </button>{" "}
+              <button onClick={() => setStatus(sale.id, "skipped")}>
+                Skipped
+              </button>{" "}
+              <button onClick={() => setStatus(sale.id, "unvisited")}>
+                Reset
+              </button>
 
                 <br />
                 <br />
