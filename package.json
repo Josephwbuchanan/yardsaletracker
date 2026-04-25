@@ -16,7 +16,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-leaflet": "^4.2.1",
-    "leaflet-rotate": "^0.2.8",
+    "leaflet-rotate": "^0.2.8"
     
   },
   "devDependencies": {
