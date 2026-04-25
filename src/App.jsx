@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import "leaflet/dist/leaflet.css";
+import "leaflet-rotate";
 import L from "leaflet";
 
 function makeIcon(color, border = "white") {
