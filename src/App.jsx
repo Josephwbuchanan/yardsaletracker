@@ -218,19 +218,15 @@ export default function YardSaleTracker() {
         zoom={14}
         style={{ height: "100%", width: "100%" }}
       >
-        <TileLayer
+
+    <TileLayer
   attribution="Tiles &copy; Esri"
   url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 />
 
 <TileLayer
-  attribution="Labels &copy; Esri"
-  url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-/>
-
-<TileLayer
-  attribution="Transportation &copy; Esri"
-  url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+  attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
 />
 
         {sales.map((sale) => {
