@@ -116,8 +116,11 @@ function RecenterButton({ userLocation }) {
         }
       }}
       style={buttonStyle}
+      title="Center on me"
     >
-      Me
+      <span style={meDotOuterStyle}>
+        <span style={meDotInnerStyle} />
+      </span>
     </button>
   );
 }
@@ -718,21 +721,43 @@ const statusBoxStyle = {
 
 const buttonStyle = {
   position: "absolute",
-  top: 124,
+  top: 114,
   left: 12,
   zIndex: 1000,
-  background: "white",
-  color: "black",
-  padding: "10px 14px",
-  borderRadius: 10,
+  width: 46,
+  height: 46,
+  borderRadius: "50%",
   border: "1px solid #aaa",
+  background: "white",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const meDotOuterStyle = {
+  width: 24,
+  height: 24,
+  borderRadius: "50%",
+  background: "#2563eb",
+  border: "4px solid white",
+  boxShadow: "0 1px 5px rgba(0,0,0,0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const meDotInnerStyle = {
+  width: 8,
+  height: 8,
+  borderRadius: "50%",
+  background: "#93c5fd",
 };
 
 const orientationButtonStyle = {
   position: "absolute",
-  top: 174,
-  left: 12,
+  bottom: 28,
+  left: 16,
   zIndex: 1000,
   width: 46,
   height: 46,
@@ -749,12 +774,12 @@ const orientationButtonStyle = {
 
 const addButtonStyle = {
   position: "absolute",
-  top: 224,
-  left: 12,
+  top: 114,
+  left: 68,
   zIndex: 1000,
   background: "white",
   color: "black",
-  padding: "10px 14px",
+  padding: "12px 14px",
   borderRadius: 10,
   border: "1px solid #aaa",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
@@ -762,8 +787,8 @@ const addButtonStyle = {
 
 const draftBoxStyle = {
   position: "absolute",
-  top: 224,
-  left: 12,
+  top: 114,
+  left: 68,
   zIndex: 1000,
   background: "white",
   color: "black",
