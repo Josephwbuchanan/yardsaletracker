@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Circle, XCircle, LocateFixed, RotateCcw, Navigation } from "lucide-react";
 
 const KML_URL = "/yardsales.kml";
-const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 
 const STATUS = {
   unvisited: { label: "Not visited", color: "#2563eb", icon: Circle },
@@ -51,28 +51,6 @@ function parseKml(kmlText) {
   }).filter((sale) => sale.address);
 }
 
-function loadGoogleMaps() {
-  if (window.google?.maps) return Promise.resolve(window.google.maps);
-  if (!GOOGLE_KEY) return Promise.reject(new Error("Missing Google Maps API key. Create .env.local with VITE_GOOGLE_MAPS_API_KEY=your_key"));
-
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector("script[data-google-maps]");
-    if (existing) {
-      existing.addEventListener("load", () => resolve(window.google.maps));
-      existing.addEventListener("error", reject);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.dataset.googleMaps = "true";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve(window.google.maps);
-    script.onerror = () => reject(new Error("Google Maps script failed to load. Check your API key and enabled APIs."));
-    document.head.appendChild(script);
-  });
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,8 +88,11 @@ export default function YardSaleTracker() {
 
   useEffect(() => {
     async function init() {
+      setLoadState("Google Maps disabled — switch to Leaflet next");
+      return;
+      
       try {
-        const maps = await loadGoogleMaps();
+        const maps = window.google?.maps;
 
         const response = await fetch(KML_URL);
         if (!response.ok) throw new Error("Could not find public/yardsales.kml");
