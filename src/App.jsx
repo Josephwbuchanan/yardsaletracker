@@ -286,6 +286,36 @@ function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
   );
 }
 
+function MapRotationController({ orientationMode, userLocation }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    if (orientationMode === "north") {
+      map.setBearing(0);
+      return;
+    }
+
+    const heading = userLocation?.heading;
+    const lat = userLocation?.lat;
+    const lng = userLocation?.lng;
+
+    if (
+      orientationMode === "facing" &&
+      typeof heading === "number" &&
+      !Number.isNaN(heading) &&
+      lat &&
+      lng
+    ) {
+      map.setView([lat, lng], map.getZoom(), { animate: false });
+      map.setBearing(-heading);
+    }
+  }, [orientationMode, userLocation, map]);
+
+  return null;
+}
+
 export default function YardSaleTracker() {
   const [sales, setSales] = useState([]);
   const [statuses, setStatuses] = useState({});
