@@ -151,75 +151,85 @@ function OrientationButton({ orientationMode, setOrientationMode }) {
   );
 }
 
-function searchSales() {
-  const searchText = window.prompt("Search existing sale addresses", "");
+function SearchSalesButton({ sales, setSelectedSale }) {
+  const map = useMap();
 
-  if (!searchText) return;
+  function searchSales() {
+    const searchText = window.prompt("Search existing sale addresses", "");
 
-  const searchParts = searchText
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+    if (!searchText) return;
 
-  const matches = sales
-    .map((sale) => {
-      const address = `${sale.address || ""} ${sale.title || ""} ${sale.name || ""}`.toLowerCase();
+    const searchParts = searchText
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
 
-      let score = 0;
+    const matches = sales
+      .map((sale) => {
+        const address = `${sale.address || ""} ${sale.title || ""} ${sale.name || ""}`.toLowerCase();
 
-      if (address.includes(searchText.toLowerCase())) {
-        score += 100;
-      }
+        let score = 0;
 
-      searchParts.forEach((part) => {
-        if (address.includes(part)) {
-          score += 10;
+        if (address.includes(searchText.toLowerCase())) {
+          score += 100;
         }
-      });
 
-      return { sale, score };
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
+        searchParts.forEach((part) => {
+          if (address.includes(part)) {
+            score += 10;
+          }
+        });
 
-  if (matches.length === 0) {
-    window.alert("No matching sales found.");
-    return;
+        return { sale, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    if (matches.length === 0) {
+      window.alert("No matching sales found.");
+      return;
+    }
+
+    const choices = matches
+      .map((item, index) => {
+        const label = cleanAddress(
+          item.sale.address || item.sale.title || item.sale.name || "Yard Sale"
+        );
+
+        return `${index + 1}. ${label}`;
+      })
+      .join("\n\n");
+
+    const selected = window.prompt(
+      `Choose the correct sale:\n\n${choices}\n\nType 1-${matches.length}`,
+      "1"
+    );
+
+    if (!selected) return;
+
+    const selectedIndex = Number(selected) - 1;
+
+    if (
+      Number.isNaN(selectedIndex) ||
+      selectedIndex < 0 ||
+      selectedIndex >= matches.length
+    ) {
+      window.alert("Invalid selection.");
+      return;
+    }
+
+    const match = matches[selectedIndex].sale;
+
+    setSelectedSale(match);
+    map.setView([match.lat, match.lng], 18);
   }
 
-  const choices = matches
-    .map((item, index) => {
-      const label = cleanAddress(
-        item.sale.address || item.sale.title || item.sale.name || "Yard Sale"
-      );
-
-      return `${index + 1}. ${label}`;
-    })
-    .join("\n\n");
-
-  const selected = window.prompt(
-    `Choose the correct sale:\n\n${choices}\n\nType 1-${matches.length}`,
-    "1"
+  return (
+    <button onClick={searchSales} style={searchButtonStyle} title="Search sales">
+      <span style={{ fontSize: 20 }}>🔍</span>
+    </button>
   );
-
-  if (!selected) return;
-
-  const selectedIndex = Number(selected) - 1;
-
-  if (
-    Number.isNaN(selectedIndex) ||
-    selectedIndex < 0 ||
-    selectedIndex >= matches.length
-  ) {
-    window.alert("Invalid selection.");
-    return;
-  }
-
-  const match = matches[selectedIndex].sale;
-
-  setSelectedSale(match);
-  map.setView([match.lat, match.lng], 18);
 }
 
 function Speedometer({ userLocation }) {
