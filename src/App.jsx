@@ -202,6 +202,47 @@ function AddSaleControls({ draftSale, setDraftSale }) {
     });
   }
 
+  async function searchAddress() {
+    const typedAddress = window.prompt(
+      "Enter address",
+      "Aubrey, TX 76227"
+    );
+
+    if (!typedAddress) return;
+
+    const searchText = typedAddress.toLowerCase().includes("aubrey")
+      ? typedAddress
+      : `${typedAddress}, Aubrey, TX 76227`;
+
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json&limit=1&q=${encodeURIComponent(searchText)}`;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      const results = await response.json();
+
+      if (!results || results.length === 0) {
+        window.alert("Address not found.");
+        return;
+      }
+
+      const lat = Number(results[0].lat);
+      const lng = Number(results[0].lon);
+
+      setDraftSale({ lat, lng });
+      map.setView([lat, lng], 18);
+    } catch (error) {
+      console.error("Address search error:", error);
+      window.alert("Could not search address.");
+    }
+  }
+
   async function applyDraftSale() {
     if (!draftSale) return;
 
@@ -237,14 +278,22 @@ function AddSaleControls({ draftSale, setDraftSale }) {
       <br />
       Drag the yellow pin, or move the map.
       <br />
+
+      <button onClick={searchAddress} style={smallButtonStyle}>
+        Address
+      </button>
+      <br />
+
       <button onClick={movePinToCenter} style={smallButtonStyle}>
         Move Pin to Center
       </button>
       <br />
+
       <button onClick={applyDraftSale} style={smallButtonStyle}>
         Apply / Save
       </button>
       <br />
+
       <button onClick={() => setDraftSale(null)} style={smallButtonStyle}>
         Cancel
       </button>
