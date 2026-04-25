@@ -151,33 +151,75 @@ function OrientationButton({ orientationMode, setOrientationMode }) {
   );
 }
 
-function SearchSalesButton({ sales, setSelectedSale }) {
-  const map = useMap();
+function searchSales() {
+  const searchText = window.prompt("Search existing sale addresses", "");
 
-  function searchSales() {
-    const searchText = window.prompt("Search existing sale addresses", "");
+  if (!searchText) return;
 
-    if (!searchText) return;
+  const searchParts = searchText
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
 
-    const match = sales.find((sale) => {
-      const address = `${sale.address || ""} ${sale.title || ""} ${sale.name || ""}`;
-      return address.toLowerCase().includes(searchText.toLowerCase());
-    });
+  const matches = sales
+    .map((sale) => {
+      const address = `${sale.address || ""} ${sale.title || ""} ${sale.name || ""}`.toLowerCase();
 
-    if (!match) {
-      window.alert("No matching sale found.");
-      return;
-    }
+      let score = 0;
 
-    setSelectedSale(match);
-    map.setView([match.lat, match.lng], 18);
+      if (address.includes(searchText.toLowerCase())) {
+        score += 100;
+      }
+
+      searchParts.forEach((part) => {
+        if (address.includes(part)) {
+          score += 10;
+        }
+      });
+
+      return { sale, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
+  if (matches.length === 0) {
+    window.alert("No matching sales found.");
+    return;
   }
 
-  return (
-    <button onClick={searchSales} style={searchButtonStyle} title="Search sales">
-  <span style={{ fontSize: 20 }}>🔍</span>
-</button>
+  const choices = matches
+    .map((item, index) => {
+      const label = cleanAddress(
+        item.sale.address || item.sale.title || item.sale.name || "Yard Sale"
+      );
+
+      return `${index + 1}. ${label}`;
+    })
+    .join("\n\n");
+
+  const selected = window.prompt(
+    `Choose the correct sale:\n\n${choices}\n\nType 1-${matches.length}`,
+    "1"
   );
+
+  if (!selected) return;
+
+  const selectedIndex = Number(selected) - 1;
+
+  if (
+    Number.isNaN(selectedIndex) ||
+    selectedIndex < 0 ||
+    selectedIndex >= matches.length
+  ) {
+    window.alert("Invalid selection.");
+    return;
+  }
+
+  const match = matches[selectedIndex].sale;
+
+  setSelectedSale(match);
+  map.setView([match.lat, match.lng], 18);
 }
 
 function Speedometer({ userLocation }) {
