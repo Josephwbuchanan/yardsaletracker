@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -50,9 +50,7 @@ function RecenterButton({ userLocation }) {
 
 export default function YardSaleTracker() {
   const [sales, setSales] = useState([]);
-  const [statuses, setStatuses] = useState(() => {
-    return JSON.parse(localStorage.getItem("yard-sale-statuses") || "{}");
-  });
+  const [statuses, setStatuses] = useState({});
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -70,8 +68,19 @@ export default function YardSaleTracker() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("yard-sale-statuses", JSON.stringify(statuses));
-  }, [statuses]);
+    const unsubscribe = onSnapshot(collection(db, "statuses"), (snapshot) => {
+      const statusMap = {};
+
+      snapshot.docs.forEach((doc) => {
+        statusMap[doc.id] = doc.data().status;
+      });
+
+      console.log("🔥 Firestore statuses:", statusMap);
+      setStatuses(statusMap);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -106,11 +115,10 @@ export default function YardSaleTracker() {
     };
   }, [sales, statuses]);
 
-  function setStatus(id, status) {
-    setStatuses((current) => ({
-      ...current,
-      [id]: status,
-    }));
+  async function setStatus(id, status) {
+    await setDoc(doc(db, "statuses", id), {
+      status,
+    });
   }
 
   function directionsUrl(sale) {
