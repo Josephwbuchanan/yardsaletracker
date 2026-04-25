@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Circle, XCircle, LocateFixed, RotateCcw, Navigation } from "lucide-react";
+import "leaflet/dist/leaflet.css";
 
 const KML_URL = "/yardsales.kml";
 
