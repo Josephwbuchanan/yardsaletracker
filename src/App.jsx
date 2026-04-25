@@ -93,8 +93,12 @@ const icons = {
 
 function cleanAddress(address) {
   return (address || "Yard Sale")
-    .replace(/,?\s*Aubrey,?\s*Texas\s*76227/gi, "")
-    .replace(/,?\s*Aubrey,?\s*TX\s*76227/gi, "")
+    .replace(/,?\s*Aubrey,?\s*(Texas|TX)?\s*76227/gi, "")
+    .replace(/,?\s*Texas\s*76227/gi, "")
+    .replace(/,?\s*TX\s*76227/gi, "")
+    .replace(/,?\s*76227/gi, "")
+    .replace(/,?\s*Aubrey/gi, "")
+    .replace(/\s*,\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
