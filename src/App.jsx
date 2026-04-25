@@ -122,10 +122,10 @@ export default function YardSaleTracker() {
         zoom={14}
         style={{ height: "100%", width: "100%" }}
       >
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+       <TileLayer
+  attribution="Tiles &copy; Esri"
+  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+/>
 
         {sales.map((sale) => {
           const status = statuses[sale.id] || "unvisited";
