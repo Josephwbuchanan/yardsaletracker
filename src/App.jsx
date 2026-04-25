@@ -178,11 +178,64 @@ function AddSaleControls({ draftSale, setDraftSale }) {
   );
 }
 
+function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
+  if (!sale) return null;
+
+  return (
+    <div style={sheetOverlayStyle}>
+      <div style={sheetHandleStyle} />
+
+      <div style={sheetHeaderStyle}>
+        <div>
+          <div style={sheetTitleStyle}>
+            {sale.title || sale.name || "Yard Sale"}
+          </div>
+          <div style={sheetStatusStyle}>
+            Current: {status}
+          </div>
+        </div>
+
+        <button onClick={onClose} style={closeButtonStyle}>
+          ×
+        </button>
+      </div>
+
+      <div style={sheetAddressStyle}>{sale.address}</div>
+
+      <div style={sheetButtonGridStyle}>
+        <button onClick={() => onStatus(sale.id, "want")} style={wantButtonStyle}>
+          Want
+        </button>
+        <button onClick={() => onStatus(sale.id, "visited")} style={visitedButtonStyle}>
+          Visited
+        </button>
+        <button onClick={() => onStatus(sale.id, "skipped")} style={skippedButtonStyle}>
+          Skipped
+        </button>
+        <button onClick={() => onStatus(sale.id, "unvisited")} style={resetButtonStyle}>
+          Reset
+        </button>
+      </div>
+
+      <a
+        href={directionsUrl(sale)}
+        target="_blank"
+        rel="noreferrer"
+        style={directionsButtonStyle}
+      >
+        Open Directions
+      </a>
+    </div>
+  );
+}
+
 export default function YardSaleTracker() {
   const [sales, setSales] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [userLocation, setUserLocation] = useState(null);
   const [draftSale, setDraftSale] = useState(null);
+
+  const [selectedSale, setSelectedSale] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
@@ -286,38 +339,13 @@ export default function YardSaleTracker() {
 
           return (
             <Marker
-              key={sale.id}
-              position={[sale.lat, sale.lng]}
-              icon={icons[status]}
-            >
-              <Popup>
-                <strong>{sale.title || sale.name || "Yard Sale"}</strong>
-                <br />
-                {sale.address}
-                <br />
-                <br />
-
-                <button onClick={() => setStatus(sale.id, "want")}>
-                  Want
-                </button>{" "}
-                <button onClick={() => setStatus(sale.id, "visited")}>
-                  Visited
-                </button>{" "}
-                <button onClick={() => setStatus(sale.id, "skipped")}>
-                  Skipped
-                </button>{" "}
-                <button onClick={() => setStatus(sale.id, "unvisited")}>
-                  Reset
-                </button>
-
-                <br />
-                <br />
-
-                <a href={directionsUrl(sale)} target="_blank" rel="noreferrer">
-                  Open directions
-                </a>
-              </Popup>
-            </Marker>
+  key={sale.id}
+  position={[sale.lat, sale.lng]}
+  icon={icons[status]}
+  eventHandlers={{
+    click: () => setSelectedSale(sale),
+  }}
+/>
           );
         })}
 
@@ -351,6 +379,13 @@ export default function YardSaleTracker() {
       </div>
 
       <Speedometer userLocation={userLocation} />
+      <BottomSheet
+  sale={selectedSale}
+  status={selectedSale ? statuses[selectedSale.id] || "unvisited" : "unvisited"}
+  onClose={() => setSelectedSale(null)}
+  onStatus={setStatus}
+  directionsUrl={directionsUrl}
+/>
     </div>
   );
 }
@@ -461,4 +496,73 @@ const accuracyStyle = {
   borderRadius: 999,
   boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
   whiteSpace: "nowrap",
+};
+
+const sheetOverlayStyle = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 2000,
+  background: "white",
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+  padding: 16,
+  boxShadow: "0 -6px 20px rgba(0,0,0,0.3)",
+};
+
+const sheetHandleStyle = {
+  width: 40,
+  height: 4,
+  background: "#ccc",
+  borderRadius: 999,
+  margin: "0 auto 10px",
+};
+
+const sheetHeaderStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+};
+
+const sheetTitleStyle = {
+  fontSize: 18,
+  fontWeight: "bold",
+};
+
+const sheetStatusStyle = {
+  fontSize: 12,
+  color: "#666",
+};
+
+const sheetAddressStyle = {
+  marginTop: 10,
+};
+
+const closeButtonStyle = {
+  border: "none",
+  background: "none",
+  fontSize: 22,
+};
+
+const sheetButtonGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 8,
+  marginTop: 12,
+};
+
+const wantButtonStyle = { background: "#f97316", color: "white", padding: 10 };
+const visitedButtonStyle = { background: "#16a34a", color: "white", padding: 10 };
+const skippedButtonStyle = { background: "#6b7280", color: "white", padding: 10 };
+const resetButtonStyle = { background: "white", border: "1px solid #ccc", padding: 10 };
+
+const directionsButtonStyle = {
+  display: "block",
+  marginTop: 12,
+  background: "#2563eb",
+  color: "white",
+  textAlign: "center",
+  padding: 12,
+  borderRadius: 10,
+  textDecoration: "none",
 };
