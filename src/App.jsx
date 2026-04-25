@@ -1038,7 +1038,7 @@ const sheetTitleStyle = {
   lineHeight: 1.25,
 };
 
-  const editableAddressStyle = {
+const editableAddressStyle = {
   ...sheetTitleStyle,
   background: "none",
   border: "none",
@@ -1066,7 +1066,8 @@ const closeButtonStyle = {
 const sheetButtonGridStyle = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  gap: 8,
+  columnGap: 8,
+  rowGap: 12,
   marginTop: 14,
 };
 
