@@ -56,6 +56,26 @@ function RecenterButton({ userLocation }) {
   );
 }
 
+function Speedometer({ userLocation }) {
+  const speedMph =
+    userLocation?.speed !== null && userLocation?.speed !== undefined
+      ? Math.round(userLocation.speed * 2.23694)
+      : 0;
+
+  const accuracyFeet =
+    userLocation?.accuracy !== null && userLocation?.accuracy !== undefined
+      ? Math.round(userLocation.accuracy * 3.28084)
+      : null;
+
+  return (
+    <div style={speedometerStyle}>
+      <div style={speedNumberStyle}>{speedMph}</div>
+      <div style={speedUnitStyle}>MPH</div>
+      {accuracyFeet && <div style={accuracyStyle}>GPS ± {accuracyFeet} ft</div>}
+    </div>
+  );
+}
+
 function AddSaleControls({ draftSale, setDraftSale }) {
   const map = useMap();
 
@@ -81,11 +101,9 @@ function AddSaleControls({ draftSale, setDraftSale }) {
     if (!draftSale) return;
 
     const name = window.prompt("Sale name?", "Added Sale");
-
     if (name === null) return;
 
     const address = window.prompt("Address or note?", "Added from map");
-
     if (address === null) return;
 
     await addDoc(collection(db, "sales"), {
@@ -170,6 +188,8 @@ export default function YardSaleTracker() {
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
+          speed: pos.coords.speed,
+          accuracy: pos.coords.accuracy,
         });
       },
       (err) => console.warn("Location error:", err),
@@ -184,14 +204,16 @@ export default function YardSaleTracker() {
   }, []);
 
   const stats = useMemo(() => {
+    const want = sales.filter((sale) => statuses[sale.id] === "want").length;
     const visited = sales.filter((sale) => statuses[sale.id] === "visited").length;
     const skipped = sales.filter((sale) => statuses[sale.id] === "skipped").length;
 
     return {
       total: sales.length,
+      want,
       visited,
       skipped,
-      left: sales.length - visited - skipped,
+      left: sales.length - want - visited - skipped,
     };
   }, [sales, statuses]);
 
@@ -218,16 +240,15 @@ export default function YardSaleTracker() {
         zoom={14}
         style={{ height: "100%", width: "100%" }}
       >
+        <TileLayer
+          attribution="Tiles &copy; Esri"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        />
 
-    <TileLayer
-  attribution="Tiles &copy; Esri"
-  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-/>
-
-<TileLayer
-  attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
-/>
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
+        />
 
         {sales.map((sale) => {
           const status = statuses[sale.id] || "unvisited";
@@ -245,18 +266,18 @@ export default function YardSaleTracker() {
                 <br />
                 <br />
 
-              <button onClick={() => setStatus(sale.id, "want")}>
-                Want
-              </button>{" "}
-              <button onClick={() => setStatus(sale.id, "visited")}>
-                Visited
-              </button>{" "}
-              <button onClick={() => setStatus(sale.id, "skipped")}>
-                Skipped
-              </button>{" "}
-              <button onClick={() => setStatus(sale.id, "unvisited")}>
-                Reset
-              </button>
+                <button onClick={() => setStatus(sale.id, "want")}>
+                  Want
+                </button>{" "}
+                <button onClick={() => setStatus(sale.id, "visited")}>
+                  Visited
+                </button>{" "}
+                <button onClick={() => setStatus(sale.id, "skipped")}>
+                  Skipped
+                </button>{" "}
+                <button onClick={() => setStatus(sale.id, "unvisited")}>
+                  Reset
+                </button>
 
                 <br />
                 <br />
@@ -289,11 +310,14 @@ export default function YardSaleTracker() {
       </MapContainer>
 
       <div style={statusBoxStyle}>
-        <strong>Yard Sale Tracker</strong>
+        <strong>Arrowbrooke Yard Sale</strong>
         <br />
-        {stats.visited}/{stats.total} visited · {stats.left} left ·{" "}
-        {stats.skipped} skipped
+        🟠 {stats.want} want · 🟢 {stats.visited} visited
+        <br />
+        ⚪ {stats.left} left · ⚫ {stats.skipped} skipped
       </div>
+
+      <Speedometer userLocation={userLocation} />
     </div>
   );
 }
@@ -313,7 +337,7 @@ const statusBoxStyle = {
 
 const buttonStyle = {
   position: "absolute",
-  top: 80,
+  top: 82,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -326,7 +350,7 @@ const buttonStyle = {
 
 const addButtonStyle = {
   position: "absolute",
-  top: 130,
+  top: 132,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -339,7 +363,7 @@ const addButtonStyle = {
 
 const draftBoxStyle = {
   position: "absolute",
-  top: 130,
+  top: 132,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -359,4 +383,48 @@ const smallButtonStyle = {
   border: "1px solid #aaa",
   background: "#f9fafb",
   color: "black",
+};
+
+const speedometerStyle = {
+  position: "absolute",
+  bottom: 28,
+  right: 16,
+  zIndex: 1000,
+  width: 86,
+  height: 86,
+  borderRadius: "50%",
+  background: "white",
+  color: "black",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+  border: "4px solid #111827",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const speedNumberStyle = {
+  fontSize: 30,
+  fontWeight: 800,
+  lineHeight: 1,
+};
+
+const speedUnitStyle = {
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: 1,
+};
+
+const accuracyStyle = {
+  position: "absolute",
+  bottom: -24,
+  right: -4,
+  background: "white",
+  color: "#374151",
+  fontSize: 11,
+  padding: "3px 6px",
+  borderRadius: 999,
+  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+  whiteSpace: "nowrap",
 };
