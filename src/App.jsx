@@ -19,22 +19,22 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-rotate";
 import L from "leaflet";
 
-function makeIcon(color, border = "white") {
+function makeIcon(color, border = "white", size = 22) {
   return L.divIcon({
     className: "",
     html: `
       <div style="
-        width: 22px;
-        height: 22px;
+        width: ${size}px;
+        height: ${size}px;
         background: ${color};
         border: 3px solid ${border};
         border-radius: 50%;
         box-shadow: 0 2px 6px rgba(0,0,0,0.45);
       "></div>
     `,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -11],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
   });
 }
 
@@ -186,6 +186,39 @@ function DraftSaleMarker({ draftSale, setDraftSale }) {
     >
       <Popup>Drag this pin to the new sale, then tap Apply / Save.</Popup>
     </Marker>
+  );
+}
+
+function ZoomAwareSaleMarker({ sale, status, onClick }) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+
+  useEffect(() => {
+    function updateZoom() {
+      setZoom(map.getZoom());
+    }
+
+    map.on("zoomend", updateZoom);
+    return () => map.off("zoomend", updateZoom);
+  }, [map]);
+
+  const size = zoom <= 13 ? 14 : zoom === 14 ? 18 : 22;
+
+  const icon =
+    status === "want"
+      ? makeIcon("#f97316", "white", size)
+      : status === "visited"
+      ? makeIcon("#16a34a", "white", size)
+      : status === "skipped"
+      ? makeIcon("#9ca3af", "white", size)
+      : makeIcon("white", "black", size);
+
+  return (
+    <Marker
+      position={[sale.lat, sale.lng]}
+      icon={icon}
+      eventHandlers={{ click: onClick }}
+    />
   );
 }
 
@@ -632,19 +665,17 @@ export default function YardSaleTracker() {
         )}
 
         {sales.map((sale) => {
-          const status = statuses[sale.id] || "unvisited";
+  const status = statuses[sale.id] || "unvisited";
 
-          return (
-            <Marker
-              key={sale.id}
-              position={[sale.lat, sale.lng]}
-              icon={icons[status]}
-              eventHandlers={{
-                click: () => setSelectedSale(sale),
-              }}
-            />
-          );
-        })}
+  return (
+    <ZoomAwareSaleMarker
+      key={sale.id}
+      sale={sale}
+      status={status}
+      onClick={() => setSelectedSale(sale)}
+    />
+  );
+})}
 
         <DraftSaleMarker draftSale={draftSale} setDraftSale={setDraftSale} />
 
