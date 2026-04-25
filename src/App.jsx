@@ -412,11 +412,14 @@ export default function YardSaleTracker() {
 
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
-      <MapContainer
-        center={[33.2448, -96.9031]}
-        zoom={14}
-        style={{ height: "100%", width: "100%" }}
-      >
+     <MapContainer
+  center={[33.2448, -96.9031]}
+  zoom={14}
+  style={{ height: "100%", width: "100%" }}
+  rotate={true}
+  touchRotate={true}
+  bearing={0}
+>
         <TileLayer
           attribution="Tiles &copy; Esri"
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
