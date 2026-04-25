@@ -219,9 +219,19 @@ export default function YardSaleTracker() {
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution="Tiles &copy; Esri"
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        />
+  attribution="Tiles &copy; Esri"
+  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+/>
+
+<TileLayer
+  attribution="Labels &copy; Esri"
+  url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+/>
+
+<TileLayer
+  attribution="Transportation &copy; Esri"
+  url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+/>
 
         {sales.map((sale) => {
           const status = statuses[sale.id] || "unvisited";
