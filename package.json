@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^latest",
+    "lucide-react": "latest",
     "leaflet": "^1.9.4",
+    "react": "latest",
+    "react-dom": "latest",
     "react-leaflet": "^4.2.1"
   },
   "devDependencies": {
@@ -23,8 +25,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "vite": "^8.0.10",
-    "react": "^latest",
-    "react-dom": "^latest"
+    "vite": "^8.0.10"
   }
 }
