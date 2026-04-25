@@ -91,6 +91,20 @@ const icons = {
   draft: makeIcon("#facc15", "black"),
 };
 
+function cleanAddress(address) {
+  return (address || "Yard Sale")
+    .replace(/,?\s*Aubrey,?\s*Texas\s*76227/gi, "")
+    .replace(/,?\s*Aubrey,?\s*TX\s*76227/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function formatStatus(status) {
+  if (!status) return "Unvisited";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 function RecenterButton({ userLocation }) {
   const map = useMap();
 
@@ -257,8 +271,8 @@ function BottomSheet({
 
       <div style={sheetHeaderStyle}>
         <div>
-          <div style={sheetTitleStyle}>{sale.address || "Yard Sale"}</div>
-          <div style={sheetStatusStyle}>Status: {status}</div>
+          <div style={sheetTitleStyle}>{cleanAddress(sale.address)}</div>
+          <div style={sheetStatusStyle}>Status: {formatStatus(status)}</div>
           {routeInfo && (
             <div style={sheetStatusStyle}>
               Route: {routeInfo.distanceMiles} mi · {routeInfo.durationMinutes} min
@@ -759,15 +773,15 @@ const sheetHeaderStyle = {
 };
 
 const sheetTitleStyle = {
-  fontSize: 18,
+  fontSize: 21,
   fontWeight: "bold",
   lineHeight: 1.25,
 };
 
 const sheetStatusStyle = {
-  fontSize: 13,
+  fontSize: 15,
   color: "#666",
-  marginTop: 4,
+  marginTop: 5,
 };
 
 const closeButtonStyle = {
