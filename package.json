@@ -8,15 +8,16 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
-  },
-  "dependencies": {
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.11.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
-    "leaflet": "^1.9.4",
-    "react-leaflet": "^4.2.1"
-  },
+  }
+ "dependencies": {
+  "@vitejs/plugin-react": "^latest",
+  "vite": "^latest",
+  "react": "^latest",
+  "react-dom": "^latest",
+  "lucide-react": "^latest",
+  "leaflet": "^1.9.4",
+  "react-leaflet": "^4.2.1"
+}
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
