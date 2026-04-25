@@ -460,6 +460,10 @@ export default function YardSaleTracker() {
           setOrientationMode={setOrientationMode}
         />
         <AddSaleControls draftSale={draftSale} setDraftSale={setDraftSale} />
+       <MapRotationController
+          orientationMode={orientationMode}
+          userLocation={userLocation}
+/>
       </MapContainer>
 
       <div style={statusBoxStyle}>
