@@ -2,6 +2,7 @@ import {
   MapContainer,
   Marker,
   Popup,
+  Polyline,
   TileLayer,
   useMap,
 } from "react-leaflet";
@@ -97,7 +98,7 @@ function RecenterButton({ userLocation }) {
     <button
       onClick={() => {
         if (userLocation) {
-          map.setView([userLocation.lat, userLocation.lng], 17);
+          map.setView([userLocation.lat, userLocation.lng], 18);
         }
       }}
       style={buttonStyle}
@@ -237,7 +238,17 @@ function AddSaleControls({ draftSale, setDraftSale }) {
   );
 }
 
-function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
+function BottomSheet({
+  sale,
+  status,
+  onClose,
+  onStatus,
+  directionsUrl,
+  onStartRoute,
+  onClearRoute,
+  routeActive,
+  routeInfo,
+}) {
   if (!sale) return null;
 
   return (
@@ -246,12 +257,13 @@ function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
 
       <div style={sheetHeaderStyle}>
         <div>
-          <div style={sheetTitleStyle}>
-            {sale.address || "Yard Sale"}
-          </div>
-          <div style={sheetStatusStyle}>
-            Status: {status}
-          </div>
+          <div style={sheetTitleStyle}>{sale.address || "Yard Sale"}</div>
+          <div style={sheetStatusStyle}>Status: {status}</div>
+          {routeInfo && (
+            <div style={sheetStatusStyle}>
+              Route: {routeInfo.distanceMiles} mi · {routeInfo.durationMinutes} min
+            </div>
+          )}
         </div>
 
         <button onClick={onClose} style={closeButtonStyle}>
@@ -274,19 +286,29 @@ function BottomSheet({ sale, status, onClose, onStatus, directionsUrl }) {
         </button>
       </div>
 
+      <button onClick={() => onStartRoute(sale)} style={routeButtonStyle}>
+        {routeActive ? "Refresh Route" : "Start Route"}
+      </button>
+
+      {routeActive && (
+        <button onClick={onClearRoute} style={clearRouteButtonStyle}>
+          Clear Route
+        </button>
+      )}
+
       <a
         href={directionsUrl(sale)}
         target="_blank"
         rel="noreferrer"
         style={directionsButtonStyle}
       >
-        Open Directions
+        Open in Google Maps
       </a>
     </div>
   );
 }
 
-function MapRotationController({ orientationMode, userLocation }) {
+function MapRotationController({ orientationMode, userLocation, routeActive }) {
   const map = useMap();
 
   useEffect(() => {
@@ -308,10 +330,38 @@ function MapRotationController({ orientationMode, userLocation }) {
       lat &&
       lng
     ) {
-      map.setView([lat, lng], map.getZoom(), { animate: false });
       map.setBearing(-heading);
+
+      if (routeActive) {
+        map.setView([lat, lng], 18, { animate: true });
+      }
     }
-  }, [orientationMode, userLocation, map]);
+  }, [orientationMode, userLocation, routeActive, map]);
+
+  return null;
+}
+
+function RouteCameraController({ routeLine, userLocation, routeActive }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || routeLine.length === 0) return;
+
+    const bounds = L.latLngBounds(routeLine);
+    map.fitBounds(bounds, {
+      paddingTopLeft: [40, 80],
+      paddingBottomRight: [40, 240],
+      maxZoom: 18,
+    });
+  }, [routeLine, map]);
+
+  useEffect(() => {
+    if (!map || !routeActive || !userLocation) return;
+
+    map.setView([userLocation.lat, userLocation.lng], 18, {
+      animate: true,
+    });
+  }, [userLocation, routeActive, map]);
 
   return null;
 }
@@ -323,6 +373,9 @@ export default function YardSaleTracker() {
   const [draftSale, setDraftSale] = useState(null);
   const [selectedSale, setSelectedSale] = useState(null);
   const [orientationMode, setOrientationMode] = useState("north");
+  const [routeLine, setRouteLine] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [routeDestinationId, setRouteDestinationId] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
@@ -367,7 +420,7 @@ export default function YardSaleTracker() {
       (err) => console.warn("Location error:", err),
       {
         enableHighAccuracy: true,
-        maximumAge: 5000,
+        maximumAge: 2000,
         timeout: 10000,
       }
     );
@@ -405,21 +458,67 @@ export default function YardSaleTracker() {
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
   }
 
+  async function startRoute(sale) {
+    if (!userLocation) {
+      window.alert("Current location is not available yet.");
+      return;
+    }
+
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${userLocation.lng},${userLocation.lat};${sale.lng},${sale.lat}` +
+      `?overview=full&geometries=geojson&steps=true`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!data.routes || data.routes.length === 0) {
+        window.alert("No route found.");
+        return;
+      }
+
+      const route = data.routes[0];
+
+      const line = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+      setRouteLine(line);
+      setRouteDestinationId(sale.id);
+      setRouteInfo({
+        distanceMiles: (route.distance / 1609.344).toFixed(1),
+        durationMinutes: Math.round(route.duration / 60),
+      });
+
+      setOrientationMode("facing");
+    } catch (error) {
+      console.error("Route error:", error);
+      window.alert("Could not load route.");
+    }
+  }
+
+  function clearRoute() {
+    setRouteLine([]);
+    setRouteInfo(null);
+    setRouteDestinationId(null);
+  }
+
   const userHeading =
     userLocation?.heading !== null && userLocation?.heading !== undefined
       ? userLocation.heading
       : 0;
 
+  const routeActive = routeLine.length > 0;
+
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
-     <MapContainer
-  center={[33.2448, -96.9031]}
-  zoom={14}
-  style={{ height: "100%", width: "100%" }}
-  rotate={true}
-  touchRotate={true}
-  bearing={0}
->
+      <MapContainer
+        center={[33.2448, -96.9031]}
+        zoom={14}
+        style={{ height: "100%", width: "100%" }}
+        rotate={true}
+        touchRotate={true}
+        bearing={0}
+      >
         <TileLayer
           attribution="Tiles &copy; Esri"
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -429,6 +528,10 @@ export default function YardSaleTracker() {
           attribution="&copy; OpenStreetMap contributors &copy; CARTO"
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
         />
+
+        {routeLine.length > 0 && (
+          <Polyline positions={routeLine} pathOptions={routeLineStyle} />
+        )}
 
         {sales.map((sale) => {
           const status = statuses[sale.id] || "unvisited";
@@ -460,10 +563,18 @@ export default function YardSaleTracker() {
           setOrientationMode={setOrientationMode}
         />
         <AddSaleControls draftSale={draftSale} setDraftSale={setDraftSale} />
-       <MapRotationController
+
+        <MapRotationController
           orientationMode={orientationMode}
           userLocation={userLocation}
-/>
+          routeActive={routeActive}
+        />
+
+        <RouteCameraController
+          routeLine={routeLine}
+          userLocation={userLocation}
+          routeActive={routeActive}
+        />
       </MapContainer>
 
       <div style={statusBoxStyle}>
@@ -482,10 +593,20 @@ export default function YardSaleTracker() {
         onClose={() => setSelectedSale(null)}
         onStatus={setStatus}
         directionsUrl={directionsUrl}
+        onStartRoute={startRoute}
+        onClearRoute={clearRoute}
+        routeActive={routeDestinationId === selectedSale?.id}
+        routeInfo={routeDestinationId === selectedSale?.id ? routeInfo : null}
       />
     </div>
   );
 }
+
+const routeLineStyle = {
+  color: "#2563eb",
+  weight: 7,
+  opacity: 0.9,
+};
 
 const statusBoxStyle = {
   position: "absolute",
@@ -699,14 +820,42 @@ const resetButtonStyle = {
   fontWeight: "bold",
 };
 
-const directionsButtonStyle = {
+const routeButtonStyle = {
   display: "block",
+  width: "100%",
   marginTop: 12,
   background: "#2563eb",
   color: "white",
   textAlign: "center",
   padding: 14,
   borderRadius: 12,
+  border: "none",
   textDecoration: "none",
   fontWeight: "bold",
+};
+
+const clearRouteButtonStyle = {
+  display: "block",
+  width: "100%",
+  marginTop: 8,
+  background: "#111827",
+  color: "white",
+  textAlign: "center",
+  padding: 12,
+  borderRadius: 12,
+  border: "none",
+  fontWeight: "bold",
+};
+
+const directionsButtonStyle = {
+  display: "block",
+  marginTop: 8,
+  background: "white",
+  color: "#2563eb",
+  textAlign: "center",
+  padding: 12,
+  borderRadius: 12,
+  textDecoration: "none",
+  fontWeight: "bold",
+  border: "1px solid #2563eb",
 };
