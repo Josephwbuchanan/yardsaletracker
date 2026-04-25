@@ -1,4 +1,11 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import { useEffect, useMemo, useState } from "react";
 import {
   addDoc,
@@ -35,7 +42,6 @@ const icons = {
   want: makeIcon("#f97316", "white"),
   visited: makeIcon("#16a34a", "white"),
   skipped: makeIcon("#9ca3af", "white"),
-  user: makeIcon("#2563eb", "white"),
   draft: makeIcon("#facc15", "black"),
 };
 
@@ -46,12 +52,12 @@ function RecenterButton({ userLocation }) {
     <button
       onClick={() => {
         if (userLocation) {
-          map.setView([userLocation.lat, userLocation.lng], 16);
+          map.setView([userLocation.lat, userLocation.lng], 17);
         }
       }}
       style={buttonStyle}
     >
-      📍 Me
+      Me
     </button>
   );
 }
@@ -76,6 +82,31 @@ function Speedometer({ userLocation }) {
   );
 }
 
+function DraftSaleMarker({ draftSale, setDraftSale }) {
+  if (!draftSale) return null;
+
+  return (
+    <Marker
+      position={[draftSale.lat, draftSale.lng]}
+      icon={icons.draft}
+      draggable={true}
+      eventHandlers={{
+        dragend: (event) => {
+          const marker = event.target;
+          const position = marker.getLatLng();
+
+          setDraftSale({
+            lat: position.lat,
+            lng: position.lng,
+          });
+        },
+      }}
+    >
+      <Popup>Drag this pin to the new sale, then tap Apply / Save.</Popup>
+    </Marker>
+  );
+}
+
 function AddSaleControls({ draftSale, setDraftSale }) {
   const map = useMap();
 
@@ -88,7 +119,7 @@ function AddSaleControls({ draftSale, setDraftSale }) {
     });
   }
 
-  function updateDraftToCenter() {
+  function movePinToCenter() {
     const center = map.getCenter();
 
     setDraftSale({
@@ -130,10 +161,10 @@ function AddSaleControls({ draftSale, setDraftSale }) {
     <div style={draftBoxStyle}>
       <strong>New Sale Pin</strong>
       <br />
-      Move the map, then tap:
+      Drag the yellow pin, or move the map.
       <br />
-      <button onClick={updateDraftToCenter} style={smallButtonStyle}>
-        Move Pin Here
+      <button onClick={movePinToCenter} style={smallButtonStyle}>
+        Move Pin to Center
       </button>
       <br />
       <button onClick={applyDraftSale} style={smallButtonStyle}>
@@ -290,19 +321,21 @@ export default function YardSaleTracker() {
           );
         })}
 
-        {draftSale && (
-          <Marker position={[draftSale.lat, draftSale.lng]} icon={icons.draft}>
-            <Popup>New sale will be saved here</Popup>
-          </Marker>
-        )}
+        <DraftSaleMarker draftSale={draftSale} setDraftSale={setDraftSale} />
 
         {userLocation && (
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={icons.user}
+          <CircleMarker
+            center={[userLocation.lat, userLocation.lng]}
+            radius={9}
+            pathOptions={{
+              color: "white",
+              weight: 3,
+              fillColor: "#2563eb",
+              fillOpacity: 1,
+            }}
           >
             <Popup>You are here</Popup>
-          </Marker>
+          </CircleMarker>
         )}
 
         <RecenterButton userLocation={userLocation} />
@@ -337,7 +370,7 @@ const statusBoxStyle = {
 
 const buttonStyle = {
   position: "absolute",
-  top: 82,
+  top: 124,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -350,7 +383,7 @@ const buttonStyle = {
 
 const addButtonStyle = {
   position: "absolute",
-  top: 132,
+  top: 174,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -363,7 +396,7 @@ const addButtonStyle = {
 
 const draftBoxStyle = {
   position: "absolute",
-  top: 132,
+  top: 174,
   left: 12,
   zIndex: 1000,
   background: "white",
@@ -373,6 +406,7 @@ const draftBoxStyle = {
   border: "1px solid #aaa",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
   fontFamily: "system-ui, sans-serif",
+  maxWidth: 180,
 };
 
 const smallButtonStyle = {
