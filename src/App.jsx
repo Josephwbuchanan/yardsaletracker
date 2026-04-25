@@ -130,9 +130,14 @@ function OrientationButton({ orientationMode, setOrientationMode }) {
           current === "north" ? "facing" : "north"
         );
       }}
-      style={orientationButtonStyle}
+      style={{
+        ...orientationButtonStyle,
+        background: orientationMode === "facing" ? "#2563eb" : "white",
+        color: orientationMode === "facing" ? "white" : "#2563eb",
+      }}
+      title={orientationMode === "north" ? "Follow direction" : "North up"}
     >
-      {orientationMode === "north" ? "North Up" : "Facing"}
+      ➤
     </button>
   );
 }
@@ -729,12 +734,17 @@ const orientationButtonStyle = {
   top: 174,
   left: 12,
   zIndex: 1000,
-  background: "white",
-  color: "black",
-  padding: "10px 14px",
-  borderRadius: 10,
+  width: 46,
+  height: 46,
+  borderRadius: "50%",
   border: "1px solid #aaa",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+  fontSize: 24,
+  fontWeight: "bold",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transform: "rotate(-45deg)",
 };
 
 const addButtonStyle = {
