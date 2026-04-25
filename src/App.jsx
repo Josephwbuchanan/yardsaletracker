@@ -5,39 +5,30 @@ import L from "leaflet";
 
 const SALES_URL = "/yardsaletracker/sales.json";
 
+function makeIcon(color, border = "white") {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        width: 22px;
+        height: 22px;
+        background: ${color};
+        border: 3px solid ${border};
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+      "></div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -11],
+  });
+}
+
 const icons = {
-  unvisited: new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-white.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  }),
-  visited: new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  }),
-  skipped: new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  }),
-  user: new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  }),
+  unvisited: makeIcon("white", "black"),
+  visited: makeIcon("#16a34a", "white"),
+  skipped: makeIcon("#9ca3af", "white"),
+  user: makeIcon("#2563eb", "white"),
 };
 
 function RecenterButton({ userLocation }) {
