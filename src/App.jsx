@@ -203,45 +203,72 @@ function AddSaleControls({ draftSale, setDraftSale }) {
   }
 
   async function searchAddress() {
-    const typedAddress = window.prompt(
-      "Enter address",
-      "Aubrey, TX 76227"
+  const typedAddress = window.prompt(
+    "Enter address",
+    "2700 Upland Trail Lane"
+  );
+
+  if (!typedAddress) return;
+
+  const searchText = typedAddress.toLowerCase().includes("aubrey")
+    ? typedAddress
+    : `${typedAddress}, Aubrey, TX 76227`;
+
+  const url =
+    `https://nominatim.openstreetmap.org/search?` +
+    `format=json&addressdetails=1&limit=5&q=${encodeURIComponent(searchText)}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    const results = await response.json();
+
+    if (!results || results.length === 0) {
+      window.alert("No close matches found.");
+      return;
+    }
+
+    const choices = results
+      .map((result, index) => `${index + 1}. ${result.display_name}`)
+      .join("\n\n");
+
+    const selected = window.prompt(
+      `Choose the correct address:\n\n${choices}\n\nType 1-${results.length}`,
+      "1"
     );
 
-    if (!typedAddress) return;
+    if (!selected) return;
 
-    const searchText = typedAddress.toLowerCase().includes("aubrey")
-      ? typedAddress
-      : `${typedAddress}, Aubrey, TX 76227`;
+    const selectedIndex = Number(selected) - 1;
 
-    const url =
-      `https://nominatim.openstreetmap.org/search?` +
-      `format=json&limit=1&q=${encodeURIComponent(searchText)}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      const results = await response.json();
-
-      if (!results || results.length === 0) {
-        window.alert("Address not found.");
-        return;
-      }
-
-      const lat = Number(results[0].lat);
-      const lng = Number(results[0].lon);
-
-      setDraftSale({ lat, lng });
-      map.setView([lat, lng], 18);
-    } catch (error) {
-      console.error("Address search error:", error);
-      window.alert("Could not search address.");
+    if (
+      Number.isNaN(selectedIndex) ||
+      selectedIndex < 0 ||
+      selectedIndex >= results.length
+    ) {
+      window.alert("Invalid selection.");
+      return;
     }
+
+    const chosen = results[selectedIndex];
+    const lat = Number(chosen.lat);
+    const lng = Number(chosen.lon);
+
+    setDraftSale({
+      lat,
+      lng,
+    });
+
+    map.setView([lat, lng], 18);
+  } catch (error) {
+    console.error("Address search error:", error);
+    window.alert("Could not search address.");
   }
+}
 
   async function applyDraftSale() {
     if (!draftSale) return;
